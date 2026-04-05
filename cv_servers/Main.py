@@ -1,12 +1,21 @@
 import cv2
 import numpy as np
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
 
 from YOLOByteTracker import YOLOByteTracker
 from activites import Excavator, Truck
 from heatmap import MotionHeatmap
-from visualization import draw_equipment  # Your vis.py functions
+from visualization import draw_equipment
 
-VIDEO_PATH = r"C:\Users\sesra\OneDrive\Desktop\PS\project\equipment_detector\cv_servers\WhatsApp Video 2026-04-04 at 3.53.54 PM.mp4"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
+
+VIDEO_PATH = os.path.join(PROJECT_DIR, "videos", "input.mp4")
+OUTPUT_ACTIVITY = os.path.join(PROJECT_DIR, "videos", "output_equipment_activity.mp4")
+OUTPUT_HEATMAP = os.path.join(PROJECT_DIR, "videos", "output_motion_heatmap.mp4")
 
 CLASS_ID_TO_NAME = {
     0: "excavator",
@@ -24,26 +33,38 @@ def main():
         fps = 30.0
     frame_time = 1.0 / fps
 
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+
+    out_activity = cv2.VideoWriter(OUTPUT_ACTIVITY, fourcc, fps, (width, height))
+    out_heatmap = cv2.VideoWriter(OUTPUT_HEATMAP, fourcc, fps, (width, height))
+
     tracker = YOLOByteTracker()
     equipment_objects = {}
     prev_frame = None
     motion_heatmap = None
+    frame_count = 0
+
+    print(f"Processing video: {VIDEO_PATH}")
+    print(f"Resolution: {width}x{height} @ {fps:.1f} fps")
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
+        frame_count += 1
+        if frame_count % 30 == 0:
+            print(f"  Processed {frame_count} frames...")
+
         raw_frame = frame.copy()
 
-        # Initialize heatmap object once
         if motion_heatmap is None:
             motion_heatmap = MotionHeatmap(raw_frame.shape)
 
-        # Detect and track objects
         tracked_objects = tracker.predict_frame(raw_frame)
 
-        # Register or update equipment objects
         for obj in tracked_objects:
             track_id = obj.get("track_id", -1)
             if track_id == -1:
@@ -58,7 +79,6 @@ def main():
             if bbox is None:
                 continue
 
-            # Create equipment instance if new
             if track_id not in equipment_objects:
                 if cls_name == "excavator":
                     eq = Excavator(track_id, bbox)
@@ -72,20 +92,16 @@ def main():
 
                 equipment_objects[track_id] = eq
 
-            # Always update current bbox
             equipment_objects[track_id].bbox = bbox
 
-        # Skip first frame (no prev_frame yet)
         if prev_frame is None:
             prev_frame = raw_frame.copy()
             continue
 
-        # Analyze each tracked equipment
         for eq in equipment_objects.values():
             if eq.bbox is None:
                 continue
 
-            # Update total_time / activity
             try:
                 activity = eq.analyze(prev_frame, raw_frame, equipment_objects)
             except Exception as e:
@@ -98,28 +114,32 @@ def main():
             else:
                 eq.active_time += frame_time
 
-            # Update heatmap
             motion_heatmap.update(prev_frame, raw_frame, eq.bbox)
-
-            # Draw equipment with proper equipment_objects passed
             draw_equipment(frame, eq, prev_frame, raw_frame, equipment_objects)
 
-        # Create displayable heatmap overlay
         heatmap_display = motion_heatmap.draw(frame.copy(), alpha=0.45)
 
-        # Show results
-        cv2.imshow("Equipment Activity", frame)
-        cv2.imshow("Motion Heatmap", heatmap_display)
+        out_activity.write(frame)
+        out_heatmap.write(heatmap_display)
 
-        # Save current frame for next iteration
         prev_frame = raw_frame.copy()
 
-        key = cv2.waitKey(1) & 0xFF
-        if key == 27:  # ESC key to exit
-            break
-
     cap.release()
-    cv2.destroyAllWindows()
+    out_activity.release()
+    out_heatmap.release()
+
+    print(f"\nDone! Processed {frame_count} frames total.")
+    print(f"Output saved to:")
+    print(f"  Activity: {OUTPUT_ACTIVITY}")
+    print(f"  Heatmap:  {OUTPUT_HEATMAP}")
+
+    if equipment_objects:
+        print("\n=== Equipment Utilization Summary ===")
+        for eq in equipment_objects.values():
+            util = (eq.active_time / max(eq.total_time, 1e-6)) * 100
+            print(f"  ID {eq.track_id} ({eq.cls_name}): "
+                  f"Active={eq.active_time:.1f}s, Idle={eq.idle_time:.1f}s, "
+                  f"Utilization={util:.1f}%")
 
 
 if __name__ == "__main__":

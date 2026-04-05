@@ -1,6 +1,9 @@
-# file: yolo_bytrack_tracker.py
-from ultralytics import YOLO
+import os
 import cv2
+from ultralytics import YOLO
+
+MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "best (2).pt")
+
 
 class YOLOByteTracker:
     """
@@ -15,9 +18,9 @@ class YOLOByteTracker:
         tracker_config (str): Tracker configuration file path (YAML), default is ByteTrack.
     """
 
-    def __init__(self, 
-                 model_path=r"C:\Users\sesra\OneDrive\Desktop\PS\project\equipment_detector\cv_servers\best (2).pt", 
-                 conf=0.5, 
+    def __init__(self,
+                 model_path=None,
+                 conf=0.5,
                  tracker="bytetrack.yaml"):
         """
         Initialize YOLOByteTracker with a model, confidence threshold, and tracker configuration.
@@ -27,9 +30,11 @@ class YOLOByteTracker:
             conf (float): Detection confidence threshold (0.0 - 1.0).
             tracker (str): Path to YOLOv8 tracker YAML configuration. Defaults to ByteTrack.
         """
-        self.model = YOLO(model_path)  # Load YOLOv8 model
-        self.conf = conf               # Detection confidence threshold
-        self.tracker_config = tracker  # Tracker configuration
+        if model_path is None:
+            model_path = MODEL_PATH
+        self.model = YOLO(model_path)
+        self.conf = conf
+        self.tracker_config = tracker
 
     def predict_frame(self, frame):
         """
@@ -47,29 +52,22 @@ class YOLOByteTracker:
                     'confidence': float     # Detection confidence score
                 }
         """
-        # Perform tracking on the frame using YOLOv8's built-in tracking API
         results = self.model.track(frame, persist=True, tracker=self.tracker_config, conf=self.conf)
-        
+
         tracked_objects = []
 
         for res in results:
-            # Skip if no objects are detected
             if len(res.boxes) == 0:
                 continue
 
-            # Loop through detected boxes
             for box in res.boxes:
-                # Extract bounding box coordinates and convert to integers
                 x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                
-                # Assign a track ID; if not available, default to -1
                 track_id = int(box.id[0]) if box.id is not None else -1
 
-                # Append the tracked object information
                 tracked_objects.append({
-                    "track_id": track_id,     
+                    "track_id": track_id,
                     "bbox": [x1, y1, x2, y2],
-                    "class": int(box.cls[0]),       
+                    "class": int(box.cls[0]),
                     "confidence": float(box.conf[0])
                 })
 
