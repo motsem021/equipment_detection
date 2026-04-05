@@ -37,7 +37,12 @@ A Python computer vision application that detects, tracks, and classifies the ac
 
 ## Running
 
-The workflow runs: `cd cv_servers && python Main.py`
+**Streamlit UI (primary):** `streamlit run app.py --server.port 5000 --server.address 0.0.0.0 --server.headless true`
+- Provides a live dashboard with video feed, machine status, and utilization metrics
+- Click "Start Processing" in the UI to begin analysis
+
+**CLI batch mode:** `cd cv_servers && python Main.py`
+- Processes the video headlessly and saves output MP4 files
 
 To process a different video, replace `videos/input.mp4` or update `VIDEO_PATH` in `cv_servers/Main.py`.
 

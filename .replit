@@ -21,13 +21,18 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd cv_servers && python Main.py"
-
-[workflows.workflow.metadata]
-outputType = "console"
+args = "streamlit run app.py --server.port 5000 --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false"
+waitForPort = 5000
 
 [deployment]
-deploymentTarget = "vm"
-run = ["python", "cv_servers/Main.py"]
+deploymentTarget = "autoscale"
+run = ["streamlit", "run", "app.py", "--server.port", "5000", "--server.address", "0.0.0.0", "--server.headless", "true", "--server.enableCORS", "false", "--server.enableXsrfProtection", "false"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
