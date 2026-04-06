@@ -3,7 +3,7 @@
 
 A computer vision system that detects, tracks, and classifies the real-time activity of heavy machinery (excavators and trucks) in video footage. Built with YOLOv8, ByteTrack, and dense optical flow, it ships with an interactive Streamlit dashboard for live monitoring and utilization analytics.
 
-![Preview](074710%2006-04-2026%20لقطة%20شاشة.png)
+![Project Preview](project-preview-1.png)
 ---
 
 ## Features
