@@ -2,8 +2,7 @@
 # Equipment Utilization Activity Classification
 
 A computer vision system that detects, tracks, and classifies the real-time activity of heavy machinery (excavators and trucks) in video footage. Built with YOLOv8, ByteTrack, and dense optical flow, it ships with an interactive Streamlit dashboard for live monitoring and utilization analytics.
-<img src="لقطة شاشة 2026-04-06 074710.png
-" width="600">
+![Preview](images/لقطة شاشة 2026-04-06 074710.png)
 ---
 
 ## Features
