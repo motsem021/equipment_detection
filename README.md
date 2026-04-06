@@ -14,6 +14,8 @@ A computer vision system that detects, tracks, and classifies the real-time acti
 - **Live Dashboard** — Streamlit UI with real-time video feed, per-machine status cards, and running utilization counters
 - **Batch CLI Mode** — Process a video headlessly and save annotated output MP4 files
 
+![Project Preview 2](images/project-preview-2.png)
+
 ---
 
 ## Activity Labels
