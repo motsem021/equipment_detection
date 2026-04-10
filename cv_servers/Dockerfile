@@ -1,21 +1,21 @@
-```dockerfile
-# Windows-based Python image
-FROM python:3.11-windowsservercore-ltsc2022
+FROM python:3.11-slim
 
-WORKDIR C:/app
+WORKDIR /app
 
-# Copy requirements first for Docker layer caching
+# install system dependencies (IMPORTANT for OpenCV)
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libx11-6 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download YOLOv8 weights during build
-RUN python -c "from ultralytics import YOLO; YOLO('yolov8m.pt')"
-
-# Copy project files
 COPY . .
 
-# Run your application
 CMD ["python", "main.py"]
-```
